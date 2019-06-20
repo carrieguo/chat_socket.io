@@ -13,10 +13,20 @@ io.on('connection', function(socket){
   let nickName;
   socket.on('come in', (name) => {
     nickName = name;
-    io.emit('display come in', name);
+    socket.broadcast.emit('display come in', name);
   });
+
+  socket.on('typing', data => {
+    socket.broadcast.emit('someone typing', data);
+  });
+
+  socket.on('no typing', () => {
+    socket.broadcast.emit('no one typing');
+  });
+
   socket.on('chat message', function(name, msg){
-    io.emit('display chat message', name, msg);
+    socket.broadcast.emit('display chat message', name, msg);
+    socket.broadcast.emit('no one typing');
   });
   console.log('conected');
   socket.on('disconnect', (reason) => {
