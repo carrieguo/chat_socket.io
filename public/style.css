@@ -61,3 +61,9 @@
     background: greenyellow;
     text-align: right;
   }
+
+  .dropdown-menu>li>a:focus, .dropdown-menu>li>a:hover {
+    color: #262626;
+    text-decoration: none;
+    background-color: #f5f5f5;
+}

@@ -1,17 +1,17 @@
 $(function () {
     const socket = io();
-    let name;
+    let username;
     let typing = false;
-    let timeout;
-    $('#nameModal').modal('show')
+    let selectedUser = 'Public';
+    $('#nameModal').modal('show');
     $('#nameModal').on('shown.bs.modal', function () {
-        $('#nameInput').focus()
-    })
+        $('#nameInput').focus();
+    });
     $('.save').on('click', function () {
-        name = $('#nameInput').val();
+        username = $('#nameInput').val();
         $('#nameModal').modal('hide');
-        $('header .name').html(name);
-        socket.emit('come in', name);
+        $('header .name').html(username);
+        socket.emit('come in', username);
     });
     $('form#login').submit(e => {
         e.preventDefault();
@@ -19,14 +19,11 @@ $(function () {
     });
 
     $('#inputMsg').on('keydown', e => {
-        
-
         if(!typing) {
             typing = true;
-            socket.emit('typing', name);
+            socket.emit('typing', username);
             timeout = setTimeout(noTyping, 1000);
         }
-        
     });
 
     function noTyping() {
@@ -34,11 +31,24 @@ $(function () {
         socket.emit('no typing');
     }
 
+    $('.dropup').on('show.bs.dropdown', function() {
+        $('.dropdown-menu li').on('click', function(e) {
+            selectedUser = $(e.currentTarget).data('user');
+            $('#sendtoList span.selected-user').html(selectedUser);
+        });
+    });
+
     $('form#sendMsg').submit(function (e) {
         let inputData = $('#inputMsg').val();
         e.preventDefault(); // prevents page reloading
-        socket.emit('chat message', name, inputData);
-        $('#messages').append($('<li class="right">').text(inputData));
+        if(selectedUser === "Public") {
+            socket.emit('chat message', username, inputData);
+            $('#messages').append($('<li class="right">').text(inputData));
+        } else {
+            socket.emit('private', username, inputData, selectedUser);
+            $('#messages').append($('<li class="right">').html('send to' + selectedUser + ': ' + inputData));
+        }
+        
         $('#inputMsg').val('');
         return false;
     });
@@ -59,7 +69,26 @@ $(function () {
         $('#messages').append($('<li>').text(name + ' says: ' + msg));
     });
 
+    socket.on('private msg', function(data) {
+        $('#messages').append($('<li class="private">').html('from' + data.from + ': ' + data.msg));
+    });
+
     socket.on('leave', function(name) {
         $('#messages').append($('<li class="leave">').text(name + ' leaves '));
     });
+
+    socket.on('onlineListUpdate', function(list) {
+        var onlineText = 'online list: ';
+        var sendtoHtml = '<li data-user="Public"><a>Public</a></li>';
+        list.map(function(name) {
+            if(name !== username) {
+                onlineText += name + ', ';
+                sendtoHtml += '<li data-user="' + name + '"><a>' + name + '</a></li>';
+            }
+        });
+        $('.online-list label').html(onlineText);
+        $('#sendMsg ul.dropdown-menu').html(sendtoHtml);
+    });
+
+    socket.emit()
 });
